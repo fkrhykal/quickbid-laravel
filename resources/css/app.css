@@ -1,0 +1,85 @@
+@import "tailwindcss";
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+/* -----------------------------
+   LIGHT THEME
+----------------------------- */
+:root {
+    --bg-base: #fcfdff;
+    --bg-raised: #ffffff;
+    --bg-surface: #ffffff;
+    --bg-elevated: #ffffff;
+    --bg-danger: ;
+
+    --fg-primary: #111111;
+    --fg-secondary: #555555;
+    --fg-tertiary: #888888;
+    --fg-disabled: #c2c2c2;
+
+    --border: #dddddd;
+    --border-input: #cccccc;
+
+    --ring: #b1b1b11f;
+
+    --input: #fcfdff;
+}
+
+/* -----------------------------
+   DARK THEME
+----------------------------- */
+[data-theme="dark"] {
+    --bg-elevated: #242424;
+    --bg-raised: #1a1a1a;
+    --bg-surface: #1f1f1f;
+    --bg-base: #0f0f0f;
+    --bg-danger: ;
+
+    --fg-primary: #fafafa;
+    --fg-secondary: #b5b5b5;
+    --fg-tertiary: #888888;
+    --fg-disabled: #555555;
+
+    --border: #333333;
+    --border-input: #444444;
+
+    --ring: #3a35357a;
+
+    --input: oklch(0.269 0 0);
+}
+
+/* -----------------------------
+   TAILWIND THEME
+----------------------------- */
+@theme inline {
+    --color-base: var(--bg-base);
+    --color-raised: var(--bg-raised);
+    --color-surface: var(--bg-surface);
+    --color-elevated: var(--bg-elevated);
+    --color-danger: var(--bg-danger);
+
+    --color-primary: var(--fg-primary);
+    --color-secondary: var(--fg-secondary);
+    --color-tertiary: var(--fg-tertiary);
+    --color-disabled: var(--fg-disabled);
+
+    --color-border: var(--border);
+    --color-border-input: var(--border-input);
+
+    --color-ring: var(--ring);
+    --color-input: var(--input);
+}
+
+/* -----------------------------
+   GLOBAL STYLES
+----------------------------- */
+@layer base {
+    body {
+        @apply bg-base text-primary;
+    }
+}
