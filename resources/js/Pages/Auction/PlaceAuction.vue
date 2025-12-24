@@ -1,14 +1,10 @@
 <script setup lang="ts">
+import { AuctionItemListForm, Navbar } from '@/components'
+import { Button, SelectField, TextAreaField, TextField } from '@/components/ui'
+import DateTimePicker from '@/components/ui/DateTimePicker.vue'
+import TimePicker from '@/components/ui/TimePicker.vue'
 import { useForm } from '@inertiajs/vue3'
-import { AuctionItemListForm, Navbar } from '../../components'
 import type { AuctionItem } from '../../components/AuctionItemForm.vue'
-import {
-    Button,
-    SelectField,
-    TextAreaField,
-    TextField,
-} from '../../components/ui'
-import { Category } from '../../types'
 
 type AuctionForm = {
     title: string
@@ -57,6 +53,12 @@ const form = useForm<AuctionForm>({
                             placeholder="Select Category" />
                     </div>
                     <div>
+                        <DateTimePicker />
+                    </div>
+                    <div>
+                        <TimePicker />
+                    </div>
+                    <div>
                         <TextAreaField
                             v-model="form.description"
                             label="Description"
@@ -65,7 +67,7 @@ const form = useForm<AuctionForm>({
                 </div>
             </section>
             <section
-                class="p-4 bg-border/20 border border-border rounded-md mt-2 h-fit">
+                class="p-4 bg-surface space-y-4 border border-border rounded-md mt-2 h-fit">
                 <h2 class="font-semibold tracking-tight">Item Information</h2>
                 <AuctionItemListForm v-model="form.items" />
             </section>

@@ -12,6 +12,7 @@ import { computed, ref } from 'vue'
 import ChevronDownIcon from './icons/ChevronDownIcon.vue'
 import ChevronUpIcon from './icons/ChevronUpIcon.vue'
 import { ImageListField, TextAreaField, TextField } from './ui'
+import CurrencyField from './ui/CurrencyField.vue'
 
 const props = withDefaults(defineProps<{ label?: string }>(), {
     label: 'Item',
@@ -40,13 +41,16 @@ const reactiveLabel = computed(() => {
                 class="text-primary text-sm block font-semibold tracking-tight"
                 >{{ reactiveLabel }}</span
             >
-            <div>
-                <ChevronUpIcon
-                    class="size-4"
-                    v-if="open" />
-                <ChevronDownIcon
-                    class="size-4"
-                    v-else />
+            <div class="flex gap-x-4 items-center">
+                <slot></slot>
+                <div>
+                    <ChevronUpIcon
+                        class="size-4"
+                        v-if="open" />
+                    <ChevronDownIcon
+                        class="size-4"
+                        v-else />
+                </div>
             </div>
         </div>
         <div
@@ -57,11 +61,15 @@ const reactiveLabel = computed(() => {
                     v-model="model.name"
                     label="Name*" />
             </div>
-
+            <div>
+                <CurrencyField
+                    v-model="model.price"
+                    label="Price*" />
+            </div>
             <div>
                 <ImageListField
                     v-model="model.pictures"
-                    img-field-class="max-w-[30%]"
+                    img-field-class="max-w-[33%]"
                     label="Pictures*" />
             </div>
             <div>
