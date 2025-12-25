@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { ref, useTemplateRef } from 'vue'
+import { hours, minutes } from '@/utils/const'
+import { numPadStart, px } from '@/utils/format'
+import { onMounted, onUnmounted, Ref, ref, useTemplateRef, watch } from 'vue'
 import { ColonIcon } from '../icons'
 
 const props = withDefaults(
@@ -10,103 +12,119 @@ const props = withDefaults(
     }
 )
 
-const hours = Array(12)
-    .fill(undefined)
-    .map((_, i) => i)
-
-const minutes = Array(60)
-    .fill(undefined)
-    .map((_, i) => i)
-
-const px = (v: number) => {
-    return `${v}px`
-}
+const hour = defineModel('hour', { default: 0 })
+const minute = defineModel('minute', { default: 0 })
 
 const size = { height: px(props.itemSize), width: px(props.itemSize) }
 const spacer = { height: px(1000) }
+const selector = { height: px(props.itemSize + 10) }
 
-const timeSelector = useTemplateRef<HTMLDivElement>('time-selector')
+const timePlaceholder = useTemplateRef<HTMLDivElement>('time-placeholder')
 const hourButtons = useTemplateRef<HTMLButtonElement[]>('hour-buttons')
 const minuteButtons = useTemplateRef<HTMLButtonElement[]>('minute-buttons')
-const activeHour = ref()
-const activeMinute = ref()
 
-const hourScroll = () => {
-    if (!hourButtons.value) {
-        return
+const activeHour = ref<number>(0)
+const activeMinute = ref<number>(0)
+
+const hourObserver = ref<IntersectionObserver>()
+const minuteObserver = ref<IntersectionObserver>()
+
+watch(activeHour, (h) => {
+    hour.value = h
+})
+
+watch(activeMinute, (m) => {
+    minute.value = m
+})
+
+onMounted(async () => {
+    const defineObserver = (
+        buttons: HTMLButtonElement[] | null,
+        active: Ref<number>
+    ) => {
+        const obs = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        const time =
+                            entry.target.attributes.getNamedItem('data-value')
+                        if (time !== null) {
+                            active.value = parseInt(time.value)
+                        }
+                    }
+                })
+            },
+            {
+                root: timePlaceholder.value,
+                rootMargin: '-45% 0px',
+            }
+        )
+
+        buttons?.forEach((e) => {
+            obs.observe(e)
+        })
+
+        return obs
     }
-    hourButtons.value.forEach((btn, i) => {
-        if (!timeSelector.value) {
-            return
-        }
-        const s = timeSelector.value.getBoundingClientRect().bottom - 5
-        const h = btn.getBoundingClientRect().bottom
-        if (s == h) {
-            activeHour.value = hours[i]
-        }
-    })
-}
 
-const minuteScroll = () => {
-    if (!minuteButtons.value) {
-        return
-    }
-    minuteButtons.value.forEach((btn, i) => {
-        if (!timeSelector.value) {
-            return
-        }
-        const s = timeSelector.value.getBoundingClientRect().bottom - 5
-        const m = btn.getBoundingClientRect().bottom
-        if (s == m) {
-            activeMinute.value = minutes[i]
-        }
-    })
-}
+    hourObserver.value = defineObserver(hourButtons.value, activeHour)
+    minuteObserver.value = defineObserver(minuteButtons.value, activeMinute)
+})
 
-const format = (v: number) => {
-    return v.toString().padStart(2, '0')
-}
+onUnmounted(() => {
+    hourObserver.value?.disconnect()
+    minuteObserver.value?.disconnect()
+})
 </script>
 
 <template>
-    <div>
-        <p>{{ activeHour }}</p>
-        <p>{{ activeMinute }}</p>
-    </div>
     <div
+        ref="time-placeholder"
         class="flex relative border size-min rounded-md border-border space-x-1 overflow-hidden"
         :style="{ height: px(height) }">
         <div
             ref="time-selector"
-            :style="{ height: px(itemSize + 10) }"
+            :style="selector"
             class="absolute bg-tertiary/5 border-t-2 border-b-2 pointer-events-none border-tertiary/50 w-full top-[50%] -translate-y-[50%]"></div>
         <div
-            @scroll="hourScroll"
+            ref="hour-wheel"
             class="pl-4 overflow-y-scroll no-scrollbar space-y-2 snap-y snap-mandatory">
             <div :style="spacer"></div>
             <button
+                :class="[
+                    activeHour === hour
+                        ? 'text-xl text-primary/90'
+                        : 'text-sm text-primary/60 ',
+                ]"
                 ref="hour-buttons"
+                :data-value="hour"
                 :style="size"
-                class="p-2 snap-center aspect-square border border-border font-semibold text-sm text-primary/60 rounded-md block w-full"
+                class="p-2 snap-center transition-all aspect-square font-semibold rounded-md block w-full"
                 v-for="hour in hours">
-                {{ format(hour) }}
+                {{ numPadStart(hour) }}
             </button>
             <div :style="spacer"></div>
         </div>
 
-        <div class="self-center">
-            <ColonIcon class="text-tertiary/80" />
+        <div
+            class="self-center absolute top-[50%] -translate-y-[40%] left-[50%] -translate-x-[45%]">
+            <ColonIcon class="text-primary/90" />
         </div>
         <div
-            @scroll="minuteScroll"
             class="pr-4 overflow-y-scroll no-scrollbar space-y-2 snap-y snap-mandatory">
             <div :style="spacer"></div>
             <button
+                :data-value="minute"
                 ref="minute-buttons"
                 :style="size"
-                class="p-2 snap-center aspect-square border border-border font-semibold text-sm text-primary/60 rounded-md block w-full"
+                :class="[
+                    activeMinute === minute
+                        ? 'text-xl text-primary/90'
+                        : 'text-sm text-primary/60 ',
+                ]"
+                class="p-2 snap-center transition-all aspect-square font-semibold rounded-md block w-full"
                 v-for="minute in minutes">
-                {{ format(minute) }}
+                {{ numPadStart(minute) }}
             </button>
             <div :style="spacer"></div>
         </div>
