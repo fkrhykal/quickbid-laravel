@@ -1,10 +1,10 @@
-import Calender from '@/components/ui/Calender.vue'
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
+import TimeField from '../resources/js/components/ui/TimeField.vue'
 
 const meta = {
-    component: Calender,
+    component: TimeField,
     tags: ['autodocs'],
-} satisfies Meta<typeof Calender>
+} satisfies Meta<typeof TimeField>
 
 export default meta
 

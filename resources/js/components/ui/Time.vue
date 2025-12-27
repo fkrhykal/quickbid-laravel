@@ -1,33 +1,106 @@
 <script setup lang="ts">
 import { hours, minutes } from '@/utils/const'
-import { numPadStart, px } from '@/utils/format'
-import { onMounted, onUnmounted, Ref, ref, useTemplateRef, watch } from 'vue'
+import { px } from '@/utils/format'
+import {
+    HTMLAttributes,
+    onMounted,
+    onUnmounted,
+    Ref,
+    ref,
+    useTemplateRef,
+    watch,
+} from 'vue'
 import { ColonIcon } from '../icons'
 
-const props = withDefaults(
-    defineProps<{ itemSize?: number; height?: number }>(),
-    {
-        itemSize: 40,
-        height: 200,
-    }
-)
+const props = withDefaults(defineProps<{ itemSize?: number }>(), {
+    itemSize: 40,
+})
 
-const hour = defineModel('hour', { default: 0 })
-const minute = defineModel('minute', { default: 0 })
+const height = props.itemSize * 5
 
-const size = { height: px(props.itemSize), width: px(props.itemSize) }
-const spacer = { height: px(1000) }
-const selector = { height: px(props.itemSize + 10) }
+const hour = defineModel('hour', {
+    default: 0,
+    set(v) {
+        if (v < 0) {
+            return 0
+        }
+        if (v > 23) {
+            return 23
+        }
+        return v
+    },
+    get(v) {
+        if (v < 0) {
+            return 0
+        }
+        if (v > 23) {
+            return 23
+        }
+        return v
+    },
+})
+const minute = defineModel('minute', {
+    default: 0,
+    set(v) {
+        if (v < 0) {
+            return 0
+        }
+        if (v > 59) {
+            return 59
+        }
+        return v
+    },
+    get(v) {
+        if (v < 0) {
+            return 0
+        }
+        if (v > 59) {
+            return 59
+        }
+        return v
+    },
+})
+
+const itemStyle: HTMLAttributes['style'] = {
+    height: px(props.itemSize),
+    width: px(props.itemSize),
+}
+const spacerStyle: HTMLAttributes['style'] = {
+    height: px(height / 2 - props.itemSize / 2),
+}
+const selectorStyle: HTMLAttributes['style'] = {
+    height: px(props.itemSize + 12),
+}
 
 const timePlaceholder = useTemplateRef<HTMLDivElement>('time-placeholder')
 const hourButtons = useTemplateRef<HTMLButtonElement[]>('hour-buttons')
 const minuteButtons = useTemplateRef<HTMLButtonElement[]>('minute-buttons')
+const hourWheel = useTemplateRef<HTMLDivElement>('hour-wheel')
+const minuteWheel = useTemplateRef<HTMLDivElement>('minute-wheel')
 
-const activeHour = ref<number>(0)
-const activeMinute = ref<number>(0)
+const activeHour = ref<number>(hour.value)
+const activeMinute = ref<number>(minute.value)
 
 const hourObserver = ref<IntersectionObserver>()
 const minuteObserver = ref<IntersectionObserver>()
+
+const scrollPosititon = (active: number) => {
+    return active * (props.itemSize + 8)
+}
+
+const hourClick = (h: number) => {
+    hourWheel.value?.scrollTo({
+        top: scrollPosititon(h),
+        behavior: 'smooth',
+    })
+}
+
+const minuteClick = (m: number) => {
+    minuteWheel.value?.scrollTo({
+        top: scrollPosititon(m),
+        behavior: 'smooth',
+    })
+}
 
 watch(activeHour, (h) => {
     hour.value = h
@@ -37,10 +110,19 @@ watch(activeMinute, (m) => {
     minute.value = m
 })
 
-onMounted(async () => {
+onMounted(() => {
+    hourWheel.value?.scrollTo({
+        top: scrollPosititon(activeHour.value),
+        behavior: 'instant',
+    })
+    minuteWheel.value?.scrollTo({
+        top: scrollPosititon(activeMinute.value),
+        behavior: 'instant',
+    })
+
     const defineObserver = (
         buttons: HTMLButtonElement[] | null,
-        active: Ref<number>
+        active: Ref<number>,
     ) => {
         const obs = new IntersectionObserver(
             (entries) => {
@@ -48,16 +130,15 @@ onMounted(async () => {
                     if (entry.isIntersecting) {
                         const time =
                             entry.target.attributes.getNamedItem('data-value')
-                        if (time !== null) {
-                            active.value = parseInt(time.value)
-                        }
+                        active.value = Number(time?.value)
+                        console.log({ s: hourWheel.value?.scrollTop })
                     }
                 })
             },
             {
                 root: timePlaceholder.value,
-                rootMargin: '-45% 0px',
-            }
+                rootMargin: '-50% 0px',
+            },
         )
 
         buttons?.forEach((e) => {
@@ -80,53 +161,56 @@ onUnmounted(() => {
 <template>
     <div
         ref="time-placeholder"
-        class="flex relative border size-min rounded-md border-border space-x-1 overflow-hidden"
+        class="bg-input border-border relative flex size-min space-x-1 overflow-hidden rounded-md border"
         :style="{ height: px(height) }">
         <div
             ref="time-selector"
-            :style="selector"
-            class="absolute bg-tertiary/5 border-t-2 border-b-2 pointer-events-none border-tertiary/50 w-full top-[50%] -translate-y-[50%]"></div>
+            :style="selectorStyle"
+            class="bg-tertiary/5 border-tertiary/50 pointer-events-none absolute top-[50%] w-full -translate-y-[50%] border-t-2 border-b-2"></div>
         <div
             ref="hour-wheel"
-            class="pl-4 overflow-y-scroll no-scrollbar space-y-2 snap-y snap-mandatory">
-            <div :style="spacer"></div>
+            class="no-scrollbar snap-y snap-mandatory space-y-2 overflow-y-scroll pl-4">
+            <div :style="spacerStyle"></div>
             <button
+                @click="hourClick(h.value)"
                 :class="[
-                    activeHour === hour
-                        ? 'text-xl text-primary/90'
-                        : 'text-sm text-primary/60 ',
+                    activeHour === h.value
+                        ? 'text-primary/90 text-xl'
+                        : 'text-primary/60 hover:bg-tertiary/10 cursor-pointer text-sm',
                 ]"
                 ref="hour-buttons"
-                :data-value="hour"
-                :style="size"
-                class="p-2 snap-center transition-all aspect-square font-semibold rounded-md block w-full"
-                v-for="hour in hours">
-                {{ numPadStart(hour) }}
+                :data-value="h.value"
+                :style="itemStyle"
+                class="block aspect-square w-full snap-center rounded-md p-2 font-semibold transition-all"
+                v-for="h in hours">
+                {{ h.label }}
             </button>
-            <div :style="spacer"></div>
+            <div :style="spacerStyle"></div>
         </div>
 
         <div
-            class="self-center absolute top-[50%] -translate-y-[40%] left-[50%] -translate-x-[45%]">
+            class="absolute top-[50%] left-[50%] -translate-x-[45%] -translate-y-[40%] self-center">
             <ColonIcon class="text-primary/90" />
         </div>
         <div
-            class="pr-4 overflow-y-scroll no-scrollbar space-y-2 snap-y snap-mandatory">
-            <div :style="spacer"></div>
+            ref="minute-wheel"
+            class="no-scrollbar snap-y snap-mandatory space-y-2 overflow-y-scroll pr-4">
+            <div :style="spacerStyle"></div>
             <button
-                :data-value="minute"
+                @click="minuteClick(m.value)"
+                :data-value="m.value"
                 ref="minute-buttons"
-                :style="size"
+                :style="itemStyle"
                 :class="[
-                    activeMinute === minute
-                        ? 'text-xl text-primary/90'
-                        : 'text-sm text-primary/60 ',
+                    activeMinute === m.value
+                        ? 'text-primary/90 text-xl'
+                        : 'text-primary/60 hover:bg-tertiary/10 cursor-pointer text-sm',
                 ]"
-                class="p-2 snap-center transition-all aspect-square font-semibold rounded-md block w-full"
-                v-for="minute in minutes">
-                {{ numPadStart(minute) }}
+                class="block aspect-square w-full snap-center rounded-md p-2 font-semibold transition-all"
+                v-for="m in minutes">
+                {{ m.label }}
             </button>
-            <div :style="spacer"></div>
+            <div :style="spacerStyle"></div>
         </div>
     </div>
 </template>

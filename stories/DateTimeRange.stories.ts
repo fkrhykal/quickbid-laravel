@@ -1,10 +1,10 @@
-import Calender from '@/components/ui/Calender.vue'
+import DateTimeRange from '@/components/ui/DateTimeRange.vue'
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 
 const meta = {
-    component: Calender,
+    component: DateTimeRange,
     tags: ['autodocs'],
-} satisfies Meta<typeof Calender>
+} satisfies Meta<typeof DateTimeRange>
 
 export default meta
 
