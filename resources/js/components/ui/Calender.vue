@@ -7,7 +7,7 @@ export type DateField = {
     year: number
 }
 
-const dateFlag = {
+const flag = {
     START: 0,
     END: 1,
     RANGE: 2,
@@ -15,7 +15,14 @@ const dateFlag = {
     UNKNOWN: 4,
 } as const
 
-type DateFlag = (typeof dateFlag)[keyof typeof dateFlag]
+const action = {
+    PICK_START: 0,
+    PICK_END: 1,
+}
+
+type DateFlag = (typeof flag)[keyof typeof flag]
+
+type Action = (typeof action)[keyof typeof action]
 </script>
 
 <script setup lang="ts">
@@ -25,8 +32,6 @@ import { ChevronLeftIcon, ChevronRightIcon } from '../icons'
 
 const currentMonth = ref(today.getMonth())
 const currentYear = ref(today.getFullYear())
-
-defineProps<{}>()
 
 const start = reactive({
     day: today.getDate(),
@@ -70,44 +75,110 @@ const changeMonth = (step: number) => {
     currentMonth.value = v
 }
 
-const getDateFlag = (date: DateField): DateFlag => {
-    if (date.year >= start.year && date.year <= end.year) {
-        if (date.month >= start.month && date.month <= end.month) {
-            if (date.day == start.day && date.day === end.day) {
-                return dateFlag.ONE_DAY
-            }
-            if (date.day == start.day) {
-                return dateFlag.START
-            }
-            if (date.day == end.day) {
-                return dateFlag.END
-            }
-            if (date.day > start.day && date.day < end.day) {
-                return dateFlag.RANGE
-            }
-        }
+const after = (a: DateField, b: DateField): boolean => {
+    if (a.year > b.year) {
+        return true
     }
-    return dateFlag.UNKNOWN
+    if (a.year < b.year) {
+        return false
+    }
+    if (a.month < b.month) {
+        return false
+    }
+    return a.day > b.day
 }
 
-const isDateFlag = (date: DateField, flag: DateFlag): boolean => {
-    return getDateFlag(date) === flag
+const before = (a: DateField, b: DateField): boolean => {
+    if (a.year < b.year) {
+        return true
+    }
+    if (a.year > b.year) {
+        return false
+    }
+    if (a.month > b.month) {
+        return false
+    }
+    return a.day < b.day
 }
 
-const changeState = ref(0)
+const equal = (a: DateField, b: DateField): boolean => {
+    return a.day === b.day && a.month === b.month && a.year === b.year
+}
 
-const select = (date: DateField) => {
-    if (changeState.value === 0) {
-        start.day = date.day
-        start.month = date.month
-        start.year = date.year
-        changeState.value = 1
-        return
+const selectAction = ref<Action>(action.PICK_START)
+
+//TODO: refactor this later (is working now, but definitely need some touch up)
+const select = (d: DateField) => {
+    switch (selectAction.value) {
+        case action.PICK_START:
+            if (equal(start, end)) {
+                if (after(d, start)) {
+                    end.day = d.day
+                    end.month = d.month
+                    end.year = d.year
+                }
+                if (before(d, start)) {
+                    end.day = start.day
+                    end.month = start.month
+                    end.year = start.year
+
+                    start.day = d.day
+                    start.month = d.month
+                    start.year = d.year
+                }
+                selectAction.value = action.PICK_START
+                return
+            }
+
+            start.day = d.day
+            start.month = d.month
+            start.year = d.year
+
+            end.day = d.day
+            end.month = d.month
+            end.year = d.year
+
+            selectAction.value = action.PICK_END
+            return
+        case action.PICK_END:
+            if (before(d, start)) {
+                end.day = start.day
+                end.month = start.month
+                end.year = start.year
+
+                start.day = d.day
+                start.month = d.month
+                start.year = d.year
+
+                selectAction.value = action.PICK_START
+                return
+            }
+            end.day = d.day
+            end.month = d.month
+            end.year = d.year
+            selectAction.value = action.PICK_START
+            return
     }
-    end.day = date.day
-    end.month = end.month
-    end.year = end.year
-    changeState.value = 0
+}
+
+const getDateFlag = (d: DateField): DateFlag => {
+    if (equal(d, start) && equal(d, end)) {
+        return flag.ONE_DAY
+    }
+    if (equal(d, start)) {
+        return flag.START
+    }
+    if (equal(d, end)) {
+        return flag.END
+    }
+    if (after(d, start) && before(d, end)) {
+        return flag.RANGE
+    }
+    return flag.UNKNOWN
+}
+
+const isDateFlag = (d: DateField, f: DateFlag): boolean => {
+    return getDateFlag(d) === f
 }
 </script>
 
@@ -138,7 +209,7 @@ const select = (date: DateField) => {
                 {{ day }}
             </span>
         </div>
-        <div class="mt-2 grid grid-cols-7 gap-0.5">
+        <div class="mt-2 grid grid-cols-7 space-y-0.5">
             <button
                 v-for="n in firstDayOfMonth"
                 :key="'prev-' + n"
@@ -149,41 +220,41 @@ const select = (date: DateField) => {
             <button
                 type="button"
                 :class="{
-                    'bg-red-500': isDateFlag(
+                    'bg-tertiary/20 rounded-full': isDateFlag(
                         {
                             day,
                             month: currentMonth,
                             year: currentYear,
                         },
-                        dateFlag.ONE_DAY,
+                        flag.ONE_DAY,
                     ),
-                    'bg-blue-500': isDateFlag(
+                    'bg-tertiary/20 rounded-l-full': isDateFlag(
                         {
                             day,
                             month: currentMonth,
                             year: currentYear,
                         },
-                        dateFlag.START,
+                        flag.START,
                     ),
-                    'bg-green-500': isDateFlag(
+                    'bg-tertiary/20 rounded-r-full': isDateFlag(
                         {
                             day,
                             month: currentMonth,
                             year: currentYear,
                         },
-                        dateFlag.END,
+                        flag.END,
                     ),
-                    'bg-yellow-500': isDateFlag(
+                    'bg-tertiary/20': isDateFlag(
                         {
                             day,
                             month: currentMonth,
                             year: currentYear,
                         },
-                        dateFlag.RANGE,
+                        flag.RANGE,
                     ),
                 }"
                 @click="select({ day, month: currentMonth, year: currentYear })"
-                class="aspect-square rounded-md p-2"
+                class="aspect-square p-2"
                 v-for="day in daysInMonth"
                 :key="day">
                 {{ day }}

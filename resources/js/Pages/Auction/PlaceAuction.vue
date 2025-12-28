@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { AuctionItemListForm, Navbar } from '@/components'
 import { Button, SelectField, TextAreaField, TextField } from '@/components/ui'
-import DateTimePicker from '@/components/ui/DateTimePicker.vue'
-import TimePicker from '@/components/ui/TimePicker.vue'
 import { useForm } from '@inertiajs/vue3'
 import type { AuctionItem } from '../../components/AuctionItemForm.vue'
 
@@ -26,12 +24,12 @@ const form = useForm<AuctionForm>({
 <template>
     <Navbar />
     <main class="container mx-auto px-4 lg:px-0">
-        <h1 class="font-semibold tracking-tighter text-lg mt-2 text-primary">
+        <h1 class="text-primary mt-2 text-lg font-semibold tracking-tighter">
             Place Auction
         </h1>
-        <form class="grid lg:grid-cols-2 gap-4">
+        <form class="grid gap-4 lg:grid-cols-2">
             <section
-                class="p-4 border border-border rounded-md mt-2 bg-surface h-fit">
+                class="border-border bg-surface mt-2 h-fit rounded-md border p-4">
                 <h2 class="font-semibold tracking-tight">
                     Auction Information
                 </h2>
@@ -53,12 +51,6 @@ const form = useForm<AuctionForm>({
                             placeholder="Select Category" />
                     </div>
                     <div>
-                        <DateTimePicker />
-                    </div>
-                    <div>
-                        <TimePicker />
-                    </div>
-                    <div>
                         <TextAreaField
                             v-model="form.description"
                             label="Description"
@@ -67,12 +59,12 @@ const form = useForm<AuctionForm>({
                 </div>
             </section>
             <section
-                class="p-4 bg-surface space-y-4 border border-border rounded-md mt-2 h-fit">
+                class="bg-surface border-border mt-2 h-fit space-y-4 rounded-md border p-4">
                 <h2 class="font-semibold tracking-tight">Item Information</h2>
                 <AuctionItemListForm v-model="form.items" />
             </section>
         </form>
-        <div class="flex justify-end mt-4 mb-12">
+        <div class="mt-4 mb-12 flex justify-end">
             <Button
                 type="submit"
                 class="whitespace-nowrap">
